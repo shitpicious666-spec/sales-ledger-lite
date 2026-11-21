@@ -24,11 +24,15 @@ def main() -> int:
     row = db.execute("SELECT amount FROM sales WHERE external_id='GR-1'").fetchone()
     assert row[0] == "29.00", row
 
-    # rollup bulanan memakai occurred_at, bukan jam sekarang
+    # rollup bulanan memakai occurred_at; penjualan bulan lain tidak boleh ikut terhitung
     ledger_lite.record(db, "gumroad", "GR-2", "Kit", "10.00", "USD",
                        occurred_at="2026-11-05T10:00:00+00:00")
+    ledger_lite.record(db, "gumroad", "GR-3", "Kit", "10.00", "USD",
+                       occurred_at="2026-12-02T10:00:00+00:00")
     nov = ledger_lite.month(db, 2026, 11)
-    assert nov["total_sales"] == 1, nov
+    des = ledger_lite.month(db, 2026, 12)
+    assert des["total_sales"] == 1, des
+    assert nov["total_sales"] == s["total_sales"] + 1, (nov, s)
 
     print(f"selftest lulus: {s['total_sales']} penjualan tercatat, "
           f"duplikat ditolak, mata uang terpisah, rollup bulanan benar")
